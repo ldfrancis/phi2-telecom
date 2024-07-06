@@ -1,0 +1,4 @@
+.states
+notes.txt
+data/
+./*/__pycache__

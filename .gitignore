@@ -1,4 +1,5 @@
 .states
 notes.txt
-data/
+data/rel18.rar
+data/doc
 utils/__pycache__/

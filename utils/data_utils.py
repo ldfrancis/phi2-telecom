@@ -141,7 +141,7 @@ def get_prompt_answer():
                     f"The correct option is {train_df.loc[qid, 'Answer_ID']}) "+"".join(value["answer"]\
                                                                 .split(":")[1:])
                 )
-                questions[qid]["answer_option"] = train_df.loc[qid, 'Answer_ID']
+                questions[qid]["answer_option"] = int(train_df.loc[qid, 'Answer_ID'])
             
         return questions
 

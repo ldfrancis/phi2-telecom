@@ -1,3 +1,4 @@
+import json
 import torch
 from torch.utils.data import DataLoader
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -10,29 +11,33 @@ from tqdm.auto import tqdm
 from peft import LoraConfig, get_peft_model
 
 
-model =  AutoModelForCausalLM.from_pretrained(
-    PHI2_MODEL_ID, trust_remote_code=True, torch_dtype=torch.float32
-)
+# model =  AutoModelForCausalLM.from_pretrained(
+#     PHI2_MODEL_ID, trust_remote_code=True, torch_dtype=torch.float16
+# )
 tokenizer = AutoTokenizer.from_pretrained(PHI2_MODEL_ID)
 
-device = "cuda:0"
-model.to(device)
+# device = "cuda:0"
+# model.to(device)
 
 train_questions, test_questions = get_prompt_answer()
+questions = [v for v in train_questions.values()]
 
+with open("data/questions.json", "w") as f:
+    json.dump(questions, f)
 
-def train_eval():
-    correct_count = 0
-    total_count = 0
-    for i, (k,v) in enumerate(train_questions.items()):
-        question = v["question"]
-        question_toks = tokenizer(question, return_tensors="pt")
-        question_toks.to(model.device)
-        result_toks = model.generate(**question_toks, max_new_tokens=40).squeeze().tolist()
-        print(tokenizer.decode(result_toks))
-        print("target: ", v["answer"], v["answer_option"])
+breakpoint()
+# def train_eval():
+#     correct_count = 0
+#     total_count = 0
+#     for i, (k,v) in enumerate(train_questions.items()):
+#         question = v["question"]
+#         question_toks = tokenizer(question, return_tensors="pt")
+#         question_toks.to(model.device)
+#         result_toks = model.generate(**question_toks, max_new_tokens=40).squeeze().tolist()
+#         print(tokenizer.decode(result_toks))
+#         print("target: ", v["answer"], v["answer_option"])
 
-train_eval()
+# train_eval()
 
 
 

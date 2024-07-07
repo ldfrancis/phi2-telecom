@@ -19,7 +19,7 @@ then
     if ! grep rel18 .states &> /dev/null
     then
     unrar x data/rel18.rar data/doc
-    echo rel1878 >> .states
+    echo rel18 >> .states
     echo "Done unpacking data/rel18.rar into data/doc/rel18"
     else
     echo "Unpacked data/rel18.rar into data/doc/rel18"

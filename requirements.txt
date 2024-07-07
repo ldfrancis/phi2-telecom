@@ -1,2 +1,6 @@
+gdown
+torch
+torchvision
+torchaudio
 python-docx
 peft

@@ -1,6 +1,11 @@
+datasets
+evaluate
 gdown
 torch
 torchvision
 torchaudio
 python-docx
 peft
+pandas
+scikit-learn
+transformers

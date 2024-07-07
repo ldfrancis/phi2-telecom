@@ -1,4 +1,3 @@
-from click import progressbar
 import torch
 from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from utils.rag_utils import create_keys
@@ -11,6 +10,7 @@ from tqdm.auto import tqdm
 embed_model_id = "BAAI/llm-embedder"
 emb_model = AutoModel.from_pretrained(embed_model_id)
 emb_tokenizer = AutoTokenizer.from_pretrained(embed_model_id)
+emb_model.to("cuda")
 
 CHUNKS_DIR = "data/doc/chunks/"
 CHUNKS_FILE = CHUNKS_DIR+"chunks.npy" 

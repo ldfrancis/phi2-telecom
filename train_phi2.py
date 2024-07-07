@@ -52,7 +52,7 @@ model.print_trainable_parameters()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 loss_fn = torch.nn.CrossEntropyLoss(reduction="none")
 
-for epoch in range(3):
+for epoch in range(1):
     progress_bar = tqdm(range(len(train_dataloader)))
     progress_bar.desc = "Train"
     train_loss = 0
@@ -71,9 +71,6 @@ for epoch in range(3):
         train_loss = train_loss +(1/(i+1)) * (loss.item()-train_loss)
         progress_bar.set_postfix({"loss": f"{train_loss:.4f}"})
         progress_bar.update(1)
-        # if i > 50:
-        #     break
-            
         
     progress_bar.close()
 

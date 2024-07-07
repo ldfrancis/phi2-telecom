@@ -1,5 +1,6 @@
 import json
-from os import replace
+import math
+import os
 from typing import List, Dict
 import pandas as pd
 
@@ -71,6 +72,44 @@ class PHI2MCQDataset(MCQDataset):
         super().__init__(questions, AutoTokenizer.from_pretrained(PHI2_MODEL_ID))
 
 
+class LMDataset(Dataset):
+    def __init__(self):
+        self.tokenizer = AutoTokenizer.from_pretrained(PHI2_MODEL_ID)
+        ctxs = []
+        self.ctx_len = 1024+1
+        files = os.listdir("data/doc/txt")
+        for filename in files:
+            with open("data/doc/txt"+filename, "r") as f:
+                doc += f.read()
+                tokens = self.tokenizer.encode(f.read())
+            for i in range(math.ceil(len(tokens)/self.ctx_len)):
+                s_idx = i*self.ctx_len
+                e_idx = s_idx + self.ctx_len
+                toks = tokens[s_idx:e_idx]
+                if len(toks) < self.ctx_len:
+                    diff = self.ctx_len - len(toks)
+                    toks += [self.tokenizer.eos_token_id]*diff
+                ctxs += [toks]
+        self.ctxs = ctxs
+        
+    def __len__(self):
+        return len(self.ctxs)
+
+    def __getitem__(self, idx):
+        ctx = self.ctxs[idx]
+        inp = ctx[:-1]
+        out = ctx[1:]
+        return {
+            "inp": torch.tensor(inp).long(),
+            "out": torch.tensor(out).long(),
+        }
+
+
+
+
+    
+
+
 def get_prompt_answer():
     with open(TRAINING_FILE, "r") as f:
         train_dict = json.loads(f.read())
@@ -99,7 +138,7 @@ def get_prompt_answer():
             questions[qid]["id"] = qid
             if split == "train":
                 questions[qid]["answer"] = (
-                    f"{train_df.loc[qid, 'Answer_ID']}):"+"".join(value["answer"]\
+                    f"The correct option is {train_df.loc[qid, 'Answer_ID']}) "+"".join(value["answer"]\
                                                                 .split(":")[1:])
                 )
                 questions[qid]["answer_option"] = train_df.loc[qid, 'Answer_ID']

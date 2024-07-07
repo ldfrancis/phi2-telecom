@@ -42,7 +42,7 @@ class MCQDataset(Dataset):
     def __getitem__(self, index) -> Dict[str, torch.Tensor]:
         question = self.questions[index]
         question_ids = self.tokenizer.encode(question["question"])
-        answer_ids = self.tokenizer.encode(question["question"])
+        answer_ids = self.tokenizer.encode(question["answer"])
         question_mask = [0]*len(question_ids)
         answer_mask = [1]*len(answer_ids)
         ids = question_ids+answer_ids
@@ -52,7 +52,8 @@ class MCQDataset(Dataset):
         return {
             "input_ids": torch.tensor(input_ids).long(),
             "output_ids": torch.tensor(output_ids).long(),
-            "output_mask": torch.tensor(output_mask).float()
+            "output_mask": torch.tensor(output_mask).float(),
+            "padding_mask": torch.tensor([1]*len(output_mask)).float()
         }
     
 
@@ -123,6 +124,7 @@ def train_collate_fn(batch):
     input_ids = []
     output_ids = []
     output_masks = []
+    padding_masks = []
     for i in range(len(batch)):
         max_len = max(max_len, len(batch[i]["input_ids"]))
     for i in range(len(batch)):
@@ -138,15 +140,20 @@ def train_collate_fn(batch):
         output_masks.append(
             torch.cat((batch[i]["output_mask"], mask), dim=0)
         )
+        padding_masks.append(
+            torch.cat((batch[i]["padding_mask"], mask), dim=0)
+        )
 
     input_ids = torch.stack(input_ids, dim=0).long()
     output_ids = torch.stack(output_ids, dim=0).long()
     output_masks = torch.stack(output_masks, dim=0)
+    padding_masks = torch.stack(padding_masks, dim=0)
 
     return {
         "input_ids": input_ids,
         "output_ids": output_ids,
         "output_masks": output_masks,
+        "padding_masks":padding_masks,
     }
 
 

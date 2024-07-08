@@ -3,19 +3,19 @@
 
 ./scripts/unpack_rel18.sh
 
-if ! grep doc2txt .states &> /dev/null
-then
-echo "Converting docs to txt files ..."
-if python ./scripts/docs2txt.py
-then
-echo doc2txt >> .states
-echo "Done converting docs to txt files"
-else
-exit 1
-fi
-else
-echo "Converted docs to txt files"
-fi
+# if ! grep doc2txt .states &> /dev/null
+# then
+# echo "Converting docs to txt files ..."
+# if python ./scripts/docs2txt.py
+# then
+# echo doc2txt >> .states
+# echo "Done converting docs to txt files"
+# else
+# exit 1
+# fi
+# else
+# echo "Converted docs to txt files"
+# fi
 
 
 if ! grep ragchunks .states &> /dev/null

@@ -8,4 +8,6 @@ python-docx
 peft
 pandas
 scikit-learn
+sentence-transformers
 transformers
+

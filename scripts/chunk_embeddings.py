@@ -1,16 +1,24 @@
 import torch
 from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from sentence_transformers import SentenceTransformer
+
 from utils.rag_utils import create_keys
 import numpy as np
 import math
 import os
 from tqdm.auto import tqdm
+from utils.constants import EMBED_MODEL_ID, EMBED_MODEL_TYPE
 
 
-embed_model_id = "BAAI/llm-embedder"
-emb_model = AutoModel.from_pretrained(embed_model_id)
-emb_tokenizer = AutoTokenizer.from_pretrained(embed_model_id)
-emb_model.to("cuda")
+if EMBED_MODEL_TYPE == "HuggingFace":
+    embed_model_id = EMBED_MODEL_ID
+    emb_model = AutoModel.from_pretrained(embed_model_id)
+    emb_tokenizer = AutoTokenizer.from_pretrained(embed_model_id)
+    emb_model.to("cuda")
+else:
+    emb_model = SentenceTransformer(EMBED_MODEL_ID, trust_remote_code=True)
+    emb_model.to("cuda")
+
 
 CHUNKS_DIR = "data/doc/chunks/"
 CHUNKS_FILE = CHUNKS_DIR+"chunks.npy" 
@@ -23,13 +31,20 @@ for i in range(steps):
     start = i*bs
     end = (i+1)*bs
     batch = chunks[start:end]
-    inp = emb_tokenizer(create_keys(chunks[start:end]), padding=True, truncation=True, return_tensors='pt')
-    inp.to(emb_model.device)
-    with torch.no_grad():
-        _output = emb_model(**inp)
-        _embed = _output.last_hidden_state[:, 0]
-        _embed = torch.nn.functional.normalize(_embed, p=2, dim=1)
-        embeds.append(_embed.cpu().numpy())
+    if EMBED_MODEL_TYPE == "HuggingFace":
+        inp = emb_tokenizer(create_keys(chunks[start:end]), padding=True, truncation=True, return_tensors='pt')
+        inp.to(emb_model.device)
+        with torch.no_grad():
+            _output = emb_model(**inp)
+            _embed = _output.last_hidden_state[:, 0]
+            _embed = torch.nn.functional.normalize(_embed, p=2, dim=1)
+            
+    elif EMBED_MODEL_TYPE == "SentenceTransformer":
+        _embed = emb_model.encode(batch)
+    else:
+        raise Exception("Invalid embedding model type")
+    
+    embeds.append(_embed.cpu().numpy())
     progressbar.update(1)
 progressbar.close()
 

@@ -9,3 +9,7 @@ TRAINING_FILE = DATA_DIR + "TeleQnA_training.txt"
 TRAINING_ANSWER_FILE = DATA_DIR + "Q_A_ID_training.csv"
 TESTING_FILE = DATA_DIR + "TeleQnA_testing1.txt"
 
+EMBEDS_FILE = "data/doc/chunks/embeds.npy"
+CHUNKS_FILE = "data/doc/chunks/chunks.npy"
+SOURCES_FILE = "data/doc/chunks/sources.npy"
+

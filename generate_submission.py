@@ -12,16 +12,16 @@ tokenizer.pad_token = tokenizer.eos_token
 model = AutoModelForCausalLM.from_pretrained("data/ft")
 model.to("cuda")
 
-train_questions, test_questions = get_prompt_answer()
+train_questions, val_questions, test_questions = get_prompt_answer()
 
-answer_mcqs(test_questions.values(), model, tokenizer)
+answer_mcqs(test_questions, model, tokenizer, rag=True)
 # test_questions = json.load(open("testq.json", "r"))
 sample_submission = pd.read_csv("data/SampleSubmission.csv")
 sample_submission["id"] = sample_submission["Question_ID"]
 sample_submission = sample_submission.set_index("id")
 
-for k, v in test_questions.items():
-    sample_submission.loc[int(k), "Answer_ID"] = int(v["pred_option"]) 
+for quest in test_questions:
+    sample_submission.loc[quest["id"], "Answer_ID"] = int(quest["pred_option"]) 
 
 sample_submission = sample_submission.reset_index(drop=True)
 

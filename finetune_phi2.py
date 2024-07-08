@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 from transformers import AutoModelForCausalLM, TrainingArguments, Trainer, AutoTokenizer, DataCollatorForLanguageModeling
 
 from utils.constants import PHI2_MODEL_ID
-from utils.data_utils import get_train_val_dataset, train_collate_fn, get_prompt_answer
+from utils.data_utils import get_prompt_answer
 from utils.mcq_utils import evaluate_mcqs
 import sys
 from tqdm.auto import tqdm
@@ -15,6 +15,11 @@ import os
 
 from peft import LoraConfig, get_peft_model
 
+USE_RAG = True
+if USE_RAG:
+    context_len = 768
+else:
+    context_len = 512
 
 # Model
 model =  AutoModelForCausalLM.from_pretrained(
@@ -24,30 +29,37 @@ tokenizer = AutoTokenizer.from_pretrained(PHI2_MODEL_ID)
 tokenizer.pad_token = tokenizer.eos_token
 
 # Dataset
-def create_example_text(example):
-    return {"text": example["question"] + " " + example["answer"]}
+def create_example_text(example, rag=False):
+    question_key = "question_context" if rag else "question"
+    return {"text": example[question_key] + " " + example["answer"]}
 
 def tokenize_example(example):
     return tokenizer(
-        example["question"],
-        max_length=512, padding="max_length", truncation=True
+        example["text"],
+        max_length=context_len, padding="max_length", truncation=True
     )
 
-train_questions, test_questions = get_prompt_answer()
-questions = [v for v in train_questions.values()]
-with open("data/questions.json", "w") as f:
-    json.dump(questions, f)
-questions_train = load_dataset("json", data_files="data/questions.json")
-questions: Dataset = questions_train["train"] # type: ignore
-questions = questions.map(create_example_text)
+train_questions, val_questions, test_questions = get_prompt_answer()
 
-dataset = questions.map(
+def get_data(fpath):
+    data = load_dataset("json", data_files=fpath)
+    return data["train"]
+
+questions_train = get_data("data/train_questions.json").map(lambda x: create_example_text(x, rag=USE_RAG))
+questions_val = get_data("data/val_questions.json").map(lambda x: create_example_text(x, rag=USE_RAG))
+
+dataset_train = questions_train.map(
     tokenize_example,
     batched=True,
     num_proc=4, # type: ignore
-    remove_columns=questions.column_names # type: ignore
+    remove_columns=questions_train.column_names # type: ignore
 )
-dataset = dataset.train_test_split(test_size=0.2, seed=45)
+dataset_val = questions_val.map(
+    tokenize_example,
+    batched=True,
+    num_proc=4, # type: ignore
+    remove_columns=questions_train.column_names # type: ignore
+)
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
 # Train
@@ -66,24 +78,25 @@ peft_model = get_peft_model(model, peft_config)
 training_args = TrainingArguments(
     output_dir="data/ft",
     eval_strategy="epoch",
-    learning_rate=2e-5,
+    learning_rate=1e-4,
     weight_decay=0.01,
-    logging_steps=20,
-    num_train_epochs=3,
+    logging_steps=10,
+    num_train_epochs=6,
     per_device_train_batch_size=8, 
+    fp16=True,
 )
 
 trainer = Trainer(
     model=peft_model,
     args=training_args,
-    train_dataset=dataset["train"],
-    eval_dataset=dataset["test"],
+    train_dataset=dataset_train,
+    eval_dataset=dataset_val,
     data_collator=data_collator,
 )
 
 trainer.train()
 trainer.model.save_pretrained("data/ft")
-evaluate_mcqs(train_questions.values(), trainer.model, tokenizer)
+evaluate_mcqs(val_questions, trainer.model, tokenizer, rag=True)
 
 
 breakpoint()

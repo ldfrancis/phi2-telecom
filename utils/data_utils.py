@@ -9,6 +9,8 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from transformers import AutoTokenizer, BitsAndBytesConfig
 
+from tqdm.auto import tqdm
+
 
 from utils.constants import (
     PHI2_MODEL_ID, 
@@ -17,8 +19,24 @@ from utils.constants import (
     TESTING_FILE
 )
 
+from utils.rag_utils import get_context
+
 
 PROMPT = """Select the correct option for the question below
+
+Question: 
+{question}
+
+Options:
+{options}
+
+Answer: """
+
+PROMPT_wITH_CONTEXT = """Given the context in backticks
+
+`{context}`
+
+Select the correct option for the question below
 
 Question: 
 {question}
@@ -105,12 +123,17 @@ class LMDataset(Dataset):
         }
 
 
-
-
-    
-
-
 def get_prompt_answer():
+
+    if os.path.exists("data/train_questions.json") and os.path.exists("data/test_questions.json") :
+        with open("data/train_questions.json", "r") as f:
+            train_questions = json.load(f)
+        with open("data/test_questions.json", "r") as f:
+            test_questions = json.load(f)
+        with open("data/val_questions.json", "r") as f:
+            val_questions = json.load(f)
+        return train_questions, val_questions, test_questions
+        
     with open(TRAINING_FILE, "r") as f:
         train_dict = json.loads(f.read())
     with open(TESTING_FILE, "r") as f:
@@ -120,11 +143,24 @@ def get_prompt_answer():
 
     def get_questions(_dict, split="train"):
         questions = {}
+        progbar = tqdm(range(len(_dict)))
+        progbar.desc = split
         for key, value in _dict.items():
-            question = PROMPT.format(
-                question=value["question"].replace("[3GPP Release 18]", "")\
+            quest = value["question"].replace("[3GPP Release 18]", "")\
                     .replace("[3GPP Release 17]", "").replace("[3GPP Release 16]", "")\
                     .replace("[3GPP Release 15]", "").replace("[3GPP Release 14]", ""),
+            question = PROMPT.format(
+                question=quest,
+                options=(
+                    "\n".join([
+                        f"{k.split(' ')[-1]}) {v}" 
+                        for k,v in value.items() if "option " == k[:7]
+                    ])
+                )
+            )
+            question_context = PROMPT_wITH_CONTEXT.format(
+                context = get_context(quest),
+                question=quest,
                 options=(
                     "\n".join([
                         f"{k.split(' ')[-1]}) {v}" 
@@ -135,6 +171,7 @@ def get_prompt_answer():
             qid = int(key.split(' ')[-1])
             questions[qid] = {}
             questions[qid]["question"] = question
+            questions[qid]["question_context"] = question_context 
             questions[qid]["id"] = qid
             if split == "train":
                 questions[qid]["answer"] = (
@@ -142,20 +179,32 @@ def get_prompt_answer():
                                                                 .split(":")[1:])
                 )
                 questions[qid]["answer_option"] = int(train_df.loc[qid, 'Answer_ID'])
+
+            progbar.update(1)
+        progbar.close()
             
         return questions
 
-    train_questions = get_questions(train_dict)
-    test_questions  = get_questions(test_dict, "test")
+    train_questions = [v for v in get_questions(train_dict).values()]
+    val_questions = train_questions[-int(0.2*len(train_questions)):]
+    # train_questions = train_questions[:-int(0.2*len(train_questions))]
+    test_questions  = [v for v in get_questions(test_dict, "test").values()]
 
-    return train_questions, test_questions
+    with open("data/train_questions.json", "w") as f:
+        json.dump(train_questions, f)
+    with open("data/val_questions.json", "w") as f:
+        json.dump(val_questions, f)
+    with open("data/test_questions.json", "w") as f:
+        json.dump(test_questions, f)
+
+    return train_questions, val_questions, test_questions
  
 
-def get_train_val_dataset():
-    train_questions, _ = get_prompt_answer()
-    train_questions = [v for v in train_questions.values()]
-    train_q, val_q = train_test_split(train_questions, test_size=0.2, random_state=32)
-    return PHI2MCQDataset(train_q), PHI2MCQDataset(val_q)
+# def get_train_val_dataset():
+#     train_questions, _ = get_prompt_answer()
+#     train_questions = [v for v in train_questions.values()]
+#     train_q, val_q = train_test_split(train_questions, test_size=0.2, random_state=32)
+#     return PHI2MCQDataset(train_q), PHI2MCQDataset(val_q)
 
 
 def train_collate_fn(batch):

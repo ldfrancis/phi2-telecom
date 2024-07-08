@@ -4,18 +4,22 @@ from tqdm.auto import tqdm
 
 def obtain_option(generation):
     answer = generation.split("Answer:")[1]
-    return re.search("\d+", answer).group()
+    match = re.search("\d+", answer)
+    if not match:
+        return 1
+    return match.group()
 
 
-def evaluate_mcqs(mcqs, model, tokenizer):
+def evaluate_mcqs(mcqs, model, tokenizer, rag=False):
     correct_preds = 0
     total = 0
     score = 0
     progbar = tqdm(range(len(mcqs)))
     progbar.desc = "MCQ Eval"
+    question_key = "question_context" if rag else "question"
     for mcq in mcqs:
         total += 1
-        question = mcq["question"]
+        question = mcq[question_key]
         question_tokens = tokenizer(question, return_tensors="pt")
         generation_tokens = model.generate(**question_tokens.to(model.device), max_new_tokens=30).squeeze().tolist()
         generation = tokenizer.decode(generation_tokens)
@@ -28,11 +32,12 @@ def evaluate_mcqs(mcqs, model, tokenizer):
     progbar.close()
     return score
 
-def answer_mcqs(mcqs, model, tokenizer):
+def answer_mcqs(mcqs, model, tokenizer, rag=False):
     progbar = tqdm(range(len(mcqs)))
     progbar.desc = "MCQ Eval"
+    question_key = "question_context" if rag else "question"
     for mcq in mcqs:
-        question = mcq["question"]
+        question = mcq[question_key]
         question_tokens = tokenizer(question, return_tensors="pt")
         generation_tokens = model.generate(**question_tokens.to(model.device), max_new_tokens=30).squeeze().tolist()
         generation = tokenizer.decode(generation_tokens)

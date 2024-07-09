@@ -27,7 +27,6 @@ chunks = []
 sources = []
 chunk_size = 1024
 
-
 for filename in files:
     chunk = ""
     if filename.endswith(".docx"):

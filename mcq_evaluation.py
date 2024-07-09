@@ -4,7 +4,7 @@ from utils.mcq_utils import evaluate_mcqs
 from utils.data_utils import get_prompt_answer
 import torch
 
-train_questions, val_questions, test_questions = get_prompt_answer()
+_, val_questions, _ = get_prompt_answer()
 model = AutoModelForCausalLM.from_pretrained("data/ft")
 # model =  AutoModelForCausalLM.from_pretrained(
 #     PHI2_MODEL_ID, trust_remote_code=True, torch_dtype=torch.float32

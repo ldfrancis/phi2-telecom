@@ -13,6 +13,7 @@ from tqdm.auto import tqdm
 
 
 from utils.constants import (
+    EMBED_MODEL_ID,
     PHI2_MODEL_ID, 
     TRAINING_ANSWER_FILE, 
     TRAINING_FILE, 
@@ -125,12 +126,12 @@ class LMDataset(Dataset):
 
 def get_prompt_answer():
 
-    if os.path.exists("data/train_questions.json") and os.path.exists("data/test_questions.json") :
-        with open("data/train_questions.json", "r") as f:
+    if os.path.exists(f"data/train_questions_{EMBED_MODEL_ID}.json") and os.path.exists(f"data/test_questions_{EMBED_MODEL_ID}.json") :
+        with open(f"data/train_questions_{EMBED_MODEL_ID}.json", "r") as f:
             train_questions = json.load(f)
-        with open("data/test_questions.json", "r") as f:
+        with open(f"data/test_questions_{EMBED_MODEL_ID}.json", "r") as f:
             test_questions = json.load(f)
-        with open("data/val_questions.json", "r") as f:
+        with open(f"data/val_questions_{EMBED_MODEL_ID}.json", "r") as f:
             val_questions = json.load(f)
         return train_questions, val_questions, test_questions
         
@@ -190,11 +191,11 @@ def get_prompt_answer():
     train_questions = train_questions[:-int(0.2*len(train_questions))]
     test_questions  = [v for v in get_questions(test_dict, "test").values()]
 
-    with open("data/train_questions.json", "w") as f:
+    with open(f"data/train_questions_{EMBED_MODEL_ID}.json", "w") as f:
         json.dump(train_questions, f)
-    with open("data/val_questions.json", "w") as f:
+    with open(f"data/val_questions_{EMBED_MODEL_ID}.json", "w") as f:
         json.dump(val_questions, f)
-    with open("data/test_questions.json", "w") as f:
+    with open(f"data/test_questions_{EMBED_MODEL_ID}.json", "w") as f:
         json.dump(test_questions, f)
 
     return train_questions, val_questions, test_questions

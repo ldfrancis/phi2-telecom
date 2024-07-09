@@ -12,6 +12,13 @@ else
     touch .states
 fi
 
+# get rel18.rar if it does not exist
+if [ -f "data/rel18.rar" ]; then
+    true
+else
+    python scripts/gdrive_download.py https://drive.google.com/file/d/1-Q8IQb_Q5lSt2Ktos8n7K2TBNXpdtKfH/view?usp=sharing --dest data
+fi
+
 
 # extract rel18 docs
 if type "unrar" &> /dev/null

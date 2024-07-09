@@ -52,4 +52,4 @@ progressbar.close()
 
 # save embedding
 embeds = np.concatenate(embeds, axis=0)
-np.save(os.path.join(CHUNKS_DIR, "embeds.npy"), embeds)
+np.save(os.path.join(CHUNKS_DIR, f"embeds_{EMBED_MODEL_ID.split('/')[-1]}.npy"), embeds)

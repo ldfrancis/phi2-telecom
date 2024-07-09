@@ -1,14 +1,14 @@
-datasets
-evaluate
-flash_attn
-gdown
 torch
 torchvision
 torchaudio
+datasets
+evaluate
+gdown
 python-docx
 peft
 pandas
 scikit-learn
 sentence-transformers
 transformers
+flash_attn
 

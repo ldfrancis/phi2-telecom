@@ -10,6 +10,7 @@ from utils.constants import EMBED_MODEL_ID, EMBEDS_FILE, CHUNKS_FILE, EMBED_MODE
 if EMBED_MODEL_TYPE == "HuggingFace":
     EMBED_MODEL = AutoModel.from_pretrained(EMBED_MODEL_ID)
     EMBED_TOKENIZER = AutoTokenizer.from_pretrained(EMBED_MODEL_ID)
+    EMBED_MODEL.to("cuda")
 else:
     EMBED_MODEL = SentenceTransformer(EMBED_MODEL_ID, trust_remote_code=True)
     EMBED_MODEL.max_seq_length = 8192

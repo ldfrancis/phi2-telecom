@@ -41,7 +41,7 @@ def get_context(query, topk=2):
 
     query = create_queries(query)
     if EMBED_MODEL_TYPE == "SentenceTransformer":
-        q = EMBED_MODEL.encode(query, prompt_name="query")
+        q = torch.tensor(EMBED_MODEL.encode(query, prompt_name="query")).float().to(EMBED_MODEL.device)
     else:
         q = EMBED_TOKENIZER(query, padding=True, truncation=True, return_tensors='pt')
         q.to(EMBED_MODEL.device)

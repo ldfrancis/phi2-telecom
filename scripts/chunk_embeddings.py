@@ -37,15 +37,17 @@ for i in range(steps):
         with torch.no_grad():
             _output = emb_model(**inp)
             _embed = _output.last_hidden_state[:, 0]
-            _embed = torch.nn.functional.normalize(_embed, p=2, dim=1)
+            _embed = torch.nn.functional.normalize(_embed, p=2, dim=1).cpu().numpy()
             
     elif EMBED_MODEL_TYPE == "SentenceTransformer":
         _embed = emb_model.encode(batch)
     else:
         raise Exception("Invalid embedding model type")
     
-    embeds.append(_embed.cpu().numpy())
+
+    embeds.append(_embed)
     progressbar.update(1)
+    
 progressbar.close()
 
 # save embedding

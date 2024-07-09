@@ -187,7 +187,7 @@ def get_prompt_answer():
 
     train_questions = [v for v in get_questions(train_dict).values()]
     val_questions = train_questions[-int(0.2*len(train_questions)):]
-    # train_questions = train_questions[:-int(0.2*len(train_questions))]
+    train_questions = train_questions[:-int(0.2*len(train_questions))]
     test_questions  = [v for v in get_questions(test_dict, "test").values()]
 
     with open("data/train_questions.json", "w") as f:

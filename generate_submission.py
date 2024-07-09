@@ -9,7 +9,7 @@ import json
 tokenizer = AutoTokenizer.from_pretrained(PHI2_MODEL_ID)
 tokenizer.pad_token = tokenizer.eos_token
 
-model = AutoModelForCausalLM.from_pretrained("data/ft")
+model = AutoModelForCausalLM.from_pretrained("data/ft/checkpoint-1000")
 model.to("cuda")
 
 train_questions, val_questions, test_questions = get_prompt_answer()

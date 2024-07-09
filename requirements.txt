@@ -1,5 +1,6 @@
 datasets
 evaluate
+flash_attn
 gdown
 torch
 torchvision

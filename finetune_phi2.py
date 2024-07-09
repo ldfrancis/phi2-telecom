@@ -81,7 +81,7 @@ training_args = TrainingArguments(
     learning_rate=1e-4,
     weight_decay=0.01,
     logging_steps=10,
-    num_train_epochs=6,
+    num_train_epochs=10,
     per_device_train_batch_size=8, 
     fp16=True,
 )

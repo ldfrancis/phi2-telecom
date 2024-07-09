@@ -14,11 +14,6 @@ TEXT_DIR = "data/doc/txt"
 os.makedirs(TEXT_DIR, exist_ok=True)
 
 
-
-tokenizer = AutoTokenizer.from_pretrained(PHI2_MODEL_ID)
-tokenizer.pad_token = tokenizer.eos_token
-
-
 def isInt(val):
     try:
         int(val)
@@ -31,7 +26,6 @@ progress_bar = tqdm(range(len(files)))
 chunks = []
 sources = []
 chunk_size = 1024
-
 
 
 for filename in files:
@@ -71,4 +65,3 @@ print("Creating chunks ...")
 os.makedirs("data/doc/chunks", exist_ok=True)
 np.save("data/doc/chunks/chunks.npy", np.array(chunks))
 np.save("data/doc/chunks/sources.npy", np.array(sources))
-breakpoint()

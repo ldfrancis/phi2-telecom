@@ -19,6 +19,15 @@ else
     python scripts/gdrive_download.py https://drive.google.com/file/d/1-Q8IQb_Q5lSt2Ktos8n7K2TBNXpdtKfH/view?usp=sharing --dest data
 fi
 
+if type "unrar" &> /dev/null
+then
+    true
+else
+    echo "unrar command is not available."
+    echo "Installing unrar ..."
+    sudo apt update
+    sudo apt install unrar
+fi
 
 # extract rel18 docs
 if type "unrar" &> /dev/null
@@ -31,9 +40,3 @@ then
     else
     echo "Unpacked data/rel18.rar into data/doc/rel18"
     fi
-else
-    echo "unrar command is not available."
-    echo "Installing unrar ..."
-    sudo apt update
-    sudo apt install unrar
-fi

@@ -1,15 +1,17 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from utils.constants import PHI2_MODEL_ID
+from utils.constants import PHI2_MODEL_ID, EMBED_MODEL_ID
 from utils.mcq_utils import evaluate_mcqs, answer_mcqs
 from utils.data_utils import get_prompt_answer
 import pandas as pd
 import json
 
 
+post_fix = EMBED_MODEL_ID.split("/")[-1]
+
 tokenizer = AutoTokenizer.from_pretrained(PHI2_MODEL_ID)
 tokenizer.pad_token = tokenizer.eos_token
 
-model = AutoModelForCausalLM.from_pretrained("data/ft/checkpoint-1000")
+model = AutoModelForCausalLM.from_pretrained(f"data/ft_{post_fix}")
 model.to("cuda")
 
 train_questions, val_questions, test_questions = get_prompt_answer()

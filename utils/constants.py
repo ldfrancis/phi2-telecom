@@ -1,7 +1,7 @@
 
 
 PHI2_MODEL_ID = "microsoft/phi-2"
-EMBED_MODEL_ID = "Alibaba-NLP/gte-Qwen2-1.5B-instruct"#"BAAI/llm-embedder"
+EMBED_MODEL_ID = "Alibaba-NLP/gte-Qwen2-1.5B-instruct" #"BAAI/llm-embedder"
 EMBED_MODEL_TYPE = "SentenceTransformer"#"HuggingFace"
 
 DATA_DIR = "data/"

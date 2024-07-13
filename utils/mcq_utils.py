@@ -17,6 +17,7 @@ def evaluate_mcqs(mcqs, model, tokenizer, rag=False):
     progbar = tqdm(range(len(mcqs)))
     progbar.desc = "MCQ Eval"
     question_key = "question_context" if rag else "question"
+    wrong_answers = []
     for mcq in mcqs:
         total += 1
         question = mcq[question_key]
@@ -28,9 +29,11 @@ def evaluate_mcqs(mcqs, model, tokenizer, rag=False):
         correct_preds += (correct_option == pred_option)
         score = correct_preds/total
         progbar.set_postfix({"score":f"{score:.4f}"})
+        if correct_option != pred_option:
+            wrong_answers += [(mcq, pred_option, generation)]
         progbar.update(1)
     progbar.close()
-    return score
+    return score, wrong_answers
 
 def answer_mcqs(mcqs, model, tokenizer, rag=False):
     progbar = tqdm(range(len(mcqs)))

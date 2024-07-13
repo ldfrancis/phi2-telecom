@@ -126,7 +126,7 @@ class LMDataset(Dataset):
 
 def get_prompt_answer():
     post_fix = EMBED_MODEL_ID.split("/")[-1]
-    if os.path.exists(f"data/train_questions_{post_fix}.json") and os.path.exists(f"data/test_questions_{EMBED_MODEL_ID}.json") :
+    if os.path.exists(f"data/train_questions_{post_fix}.json") and os.path.exists(f"data/test_questions_{post_fix}.json") :
         with open(f"data/train_questions_{post_fix}.json", "r") as f:
             train_questions = json.load(f)
         with open(f"data/test_questions_{post_fix}.json", "r") as f:
@@ -134,7 +134,7 @@ def get_prompt_answer():
         with open(f"data/val_questions_{post_fix}.json", "r") as f:
             val_questions = json.load(f)
         return train_questions, val_questions, test_questions
-        
+    
     with open(TRAINING_FILE, "r") as f:
         train_dict = json.loads(f.read())
     with open(TESTING_FILE, "r") as f:

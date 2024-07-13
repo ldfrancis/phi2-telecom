@@ -10,5 +10,5 @@ pandas
 scikit-learn
 sentence-transformers
 transformers
-flash_attn
+
 

@@ -34,7 +34,7 @@ def create_keys(texts):
     ]
 
 
-def get_context(query, topk=2):
+def get_context(query, topk=1):
     global EMBEDS, CHUNKS
     if EMBEDS is None or CHUNKS is None:
         EMBEDS = np.load(EMBEDS_FILE)

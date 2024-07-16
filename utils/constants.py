@@ -14,3 +14,5 @@ EMBEDS_FILE = f"data/doc/chunks/embeds_{EMBED_MODEL_ID.split('/')[-1]}.npy"
 CHUNKS_FILE = "data/doc/chunks/chunks.npy"
 SOURCES_FILE = "data/doc/chunks/sources.npy"
 
+USE_RAG_CONTEXT = True
+

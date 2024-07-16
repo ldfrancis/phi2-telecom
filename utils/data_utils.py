@@ -19,7 +19,8 @@ from utils.constants import (
     PHI2_MODEL_ID, 
     TRAINING_ANSWER_FILE, 
     TRAINING_FILE, 
-    TESTING_FILE
+    TESTING_FILE,
+    USE_RAG_CONTEXT
 )
 
 from utils.rag_utils import get_context
@@ -225,36 +226,90 @@ def add_context_to_questions():
     with open("data/test.json", "w") as f:
         json.dump(test_questions, f)
 
-def create_prompt(question, train_questions, split="train"):
+
+def create_prompt(question, split="train"):
     prompt = "The following are multiple choice questions (with answers) about Telecom documents.\n\n"
-    
+    options = question["options"]
+    context = "\n".join(question["contexts"][:2])
 
-def create_possible_train_mcqs():
+    def _prompt(options, correct_option, correct_id):
+        idx = correct_id
+        prompt = ""
+        if USE_RAG_CONTEXT:
+            prompt += "With the information below:\n\n"
+            prompt += context + "\n\n"
+        prompt += "The following are multiple choice questions (with answers) about Telecom documents.\n\n"
+        _options = options.copy()
+        random.shuffle(_options)
+        _options.insert(idx, correct_option)
+        option_text = "\n".join([f"{o}) " + opt for o, opt in zip(["A","B","C","D","E"], _options)])
+        option_answer = ["A","B","C","D","E"][idx]
+        prompt += option_text
+        prompt += "\nAnswer: "
+        return {"prompt":prompt, "answer": option_answer}
 
-    question = TRAIN_QUESTIONS[index]
-    prompt = "The following are multiple choice questions (with answers) about Telecom documents.\n\n"
-    seen_idxs = [index]
-    for _ in range(1):
-        idx = index
-        while(idx in seen_idxs):
-            idx = random.choice(range(len(TRAIN_QUESTIONS)))
-        seen_idxs.append(idx)
-        p_question = TRAIN_QUESTIONS[idx]
-        prompt += f"{clean_question(p_question['question'])}\n"
-        prompt += "\n".join(p_question["options"])
-        prompt += f"\nAnswer: {p_question['answer_option']}\n\n"
-    prompt += f"{clean_question(question['question'])}\n"
-    prompt += "\n".join(question["options"])
-    prompt += "\nAnswer: "
-    return prompt
+    if split=="train":
+        correct_id = question["correct_option_idx"]
+        correct_option = options.pop(correct_id)
+        prompts = []
+        for idx in range(len(options)+1):
+            prompt = _prompt(options, correct_option, idx)
+            prompts += [prompt]
+        return prompts
+    elif split=="val":
+        correct_id = question["correct_option_idx"]
+        correct_option = options.pop(correct_id)
+        return _prompt(options, correct_option, correct_id)
+    else:
+        prompt = ""
+        if USE_RAG_CONTEXT:
+            prompt += "With the information below:\n\n"
+            prompt += context + "\n\n"
+        prompt += "The following are multiple choice questions (with answers) about Telecom documents.\n\n"
+        options = [o for o in options if o is not None]
+        option_text = "\n".join([f"{o}) " + opt for o, opt in zip(["A","B","C","D","E"], options)])
+        prompt += option_text
+        prompt += "\nAnswer: "
+        return {"prompt": prompt}
 
 
+def create_mcqs():
     train_mcqs = []
-    with open("data/train.json", "w") as f:
+    with open("data/train.json", "r") as f:
         train_questions = json.load(f)
 
     for quest in train_questions:
-        
+        prompts = create_prompt(quest, split="train")
+        for prompt in prompts:
+            mcq = {**prompt, "id":quest["id"]}
+            train_mcqs += [mcq]
+
+    with open("data/train_mcqs.json", "w") as f:
+        json.dump(train_mcqs, f)
+
+    val_mcqs = []
+    with open("data/val.json", "r") as f:
+        val_questions = json.load(f)
+
+    for quest in val_questions:
+        prompt = create_prompt(quest, split="val")
+        mcq = {**prompt, "id":quest["id"]}
+        val_mcqs += [mcq]
+
+    with open("data/val_mcqs.json", "w") as f:
+        json.dump(val_mcqs, f)
+
+    test_mcqs = []
+    with open("data/test.json", "r") as f:
+        test_questions = json.load(f)
+
+    for quest in test_questions:
+        prompt = create_prompt(quest, split="test")
+        mcq = {**prompt, "id":quest["id"]}
+        test_mcqs += [mcq]
+
+    with open("data/test_mcqs.json", "w") as f:
+        json.dump(test_mcqs, f)
 
 
 def prepare_prompts():
@@ -266,7 +321,7 @@ def prepare_prompts():
         test_questions = json.load(f)   
 
     # for v in train_questions:
-
+    
 
 
 
@@ -398,4 +453,6 @@ TEST_QUESTIONS = load_questions("data/TeleQnA_testing1.txt", split="test")
 TEST_QUESTIONS_NEW = load_questions("data/questions_new.txt", split="test")
 
 if __name__=="__main__":
-    add_context_to_questions()
+    # add_context_to_questions()
+    create_mcqs()
+    print("DONE!")

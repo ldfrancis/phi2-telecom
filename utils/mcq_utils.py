@@ -17,23 +17,27 @@ def evaluate_mcqs(mcqs, model, tokenizer, rag=False):
     progbar = tqdm(range(len(mcqs)))
     progbar.desc = "MCQ Eval"
     question_key = "question_context" if rag else "question"
+    option_ids = [tokenizer(o).input_ids[0] for o in ["A", "B", "C", "D", "E"]]
     wrong_answers = []
     for mcq in mcqs:
         total += 1
         question = mcq[question_key]
         question_tokens = tokenizer(question, return_tensors="pt")
-        generation_tokens = model.generate(**question_tokens.to(model.device), max_new_tokens=30).squeeze().tolist()
-        generation = tokenizer.decode(generation_tokens)
-        pred_option = int(obtain_option(generation))
-        correct_option = mcq["answer_option"]
+        pred_option = ["A", "B", "C", "D", "E"][model(**question.to(model.device)).logits[:,-1,option_ids].squeeze().argmax().item()]
+        correct_option = mcq["answer"]
+        # # generation_tokens = model.generate(**question_tokens.to(model.device), max_new_tokens=30).squeeze().tolist()
+        # # generation = tokenizer.decode(generation_tokens)
+        # # pred_option = int(obtain_option(generation))
+        # correct_option = mcq["answer_option"]
         correct_preds += (correct_option == pred_option)
         score = correct_preds/total
         progbar.set_postfix({"score":f"{score:.4f}"})
         if correct_option != pred_option:
-            wrong_answers += [(mcq, pred_option, generation)]
+            wrong_answers += [(mcq, pred_option)]
         progbar.update(1)
     progbar.close()
     return score, wrong_answers
+
 
 def answer_mcqs(mcqs, model, tokenizer, rag=False):
     progbar = tqdm(range(len(mcqs)))

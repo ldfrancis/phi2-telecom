@@ -189,6 +189,7 @@ def mcq_answer(prompt, model, tokenizer, option_ids):
     
 TRAIN_QUESTIONS = load_questions("./TeleQnA_training.txt")
 TEST_QUESTIONS = load_questions("./TeleQnA_testing1.txt", split="test")
+TEST_QUESTIONS_NEW = load_questions("./questions_new.txt", split="test")
 
 
 def preprocess_questions():
@@ -200,10 +201,32 @@ def preprocess_questions():
     for v in TEST_QUESTIONS:
         contexts = get_context(clean_question(v["question"]))
         v["contexts"] = contexts
+    for v in TEST_QUESTIONS_NEW:
+        contexts = get_context(clean_question(v["question"]))
+        v["contexts"] = contexts
     
     train_questions = TRAIN_QUESTIONS[:-num_val]
     val_questions = TRAIN_QUESTIONS[-num_val:]
-    test_questions = TEST_QUESTIONS
+    test_questions = TEST_QUESTIONS + TEST_QUESTIONS_NEW
+
+    with open("data/train.json", "w") as f:
+        json.dump(train_questions, f)
+    with open("data/val.json", "w") as f:
+        json.dump(val_questions, f)
+    with open("data/test.json", "w") as f:
+        json.dump(test_questions, f)
+
+
+def prepare_prompts():
+    with open("data/train.json", "w") as f:
+        train_questions = json.load(f)
+    with open("data/val.json", "w") as f:
+        val_questions = json.load(f)
+    with open("data/test.json", "w") as f:
+        test_questions = json.load(f)   
+
+    # for v in train_questions:
+
 
 
 

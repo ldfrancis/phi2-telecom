@@ -40,3 +40,4 @@ then
     else
     echo "Unpacked data/rel18.rar into data/doc/rel18"
     fi
+fi

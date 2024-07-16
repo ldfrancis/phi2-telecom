@@ -34,7 +34,7 @@ def create_keys(texts):
     ]
 
 
-def get_context(query, topk=1):
+def get_context(query, topk=3):
     global EMBEDS, CHUNKS
     if EMBEDS is None or CHUNKS is None:
         EMBEDS = np.load(EMBEDS_FILE)
@@ -63,14 +63,14 @@ def get_context(query, topk=1):
     scores = np.concatenate(scores, axis=1)
     args = np.argsort(scores, axis=1)[:,::-1][:,:topk]
 
-    context = ""
+    contexts = []
     for i in range(len(query)):
         for j in range(topk):
-            context += CHUNKS[args[i,j]]
-            context += "\n"
-        context += "\n"
+            contexts += [CHUNKS[args[i,j]]]
+            # context += "\n"
+        # context += "\n"
 
-    return context
+    return contexts
 
 
 

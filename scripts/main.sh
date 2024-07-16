@@ -44,6 +44,7 @@ else
 echo "Created document chunks for RAG"
 fi
 
+
 if ! grep chunkembeddings .states &> /dev/null
 then
 echo "Creating chunk embeddings"

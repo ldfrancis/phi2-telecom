@@ -134,17 +134,11 @@ def load_questions(file_path, split="train"):
             id_ = int(k.split(" ")[-1])
             options_list = [k_ for k_ in v.keys() if "option" in k_]
             options_ = [v[f"option {i}"] for i in range(1, len(options_list)+1)]
-            options_ = [f"{l}. "+v for v, l in zip(options_, ["A", "B", "C", "D", "E"])]
+            # options_ = [f"{l}. "+v for v, l in zip(options_, ["A", "B", "C", "D", "E"])]
             v["id"] = id_
             v["options"] = options_
             if split=="train":
-                v["answer_option"] = {
-                    1: "A",
-                    2: "B",
-                    3: "C",
-                    4: "D",
-                    5: "E",
-                }[int(v["answer"].split(":")[0].split(" ")[-1])]
+                v["correct_option_idx"] = int(v["answer"].split(":")[0].split(" ")[-1])-1
             questions.append(v)
         return questions
 
@@ -155,7 +149,7 @@ def clean_question(question):
     return question
 
 
-def prompt_for_question(index):
+def prompt_for_question(question):
     question = TRAIN_QUESTIONS[index]
     prompt = "The following are multiple choice questions (with answers) about Telecom documents.\n\n"
     # prompt = "Select the correct option for the question below.\n\n"
@@ -174,36 +168,51 @@ def prompt_for_question(index):
     prompt += "\nAnswer: "
     return prompt
 
-correct_options = 0
-for i in range(len(TRAIN_QUESTIONS)):
-    correct_options += TRAIN_QUESTIONS[i]["answer_option"] == {1:"A",2:"B",3:"C",4:"D",5:"E"}[
-        model(**model.tokenizer(prompt_for_question(i), return_tensors="pt").to(model.device)).logits[:,-1,option_ids].squeeze().argmax().item()+1
-    ]
-    print(correct_options/(i+1))
+# correct_options = 0
+# for i in range(len(TRAIN_QUESTIONS)):
+#     correct_options += TRAIN_QUESTIONS[i]["answer_option"] == {1:"A",2:"B",3:"C",4:"D",5:"E"}[
+#         model(**model.tokenizer(prompt_for_question(i), return_tensors="pt").to(model.device)).logits[:,-1,option_ids].squeeze().argmax().item()+1
+#     ]
+#     print(correct_options/(i+1))
 
 
 def mcq_answer(prompt, model, tokenizer, option_ids):
     return {1:"A",2:"B",3:"C",4:"D",5:"E"}[
         model(**tokenizer(prompt, return_tensors="pt").to(model.device)).logits[:,-1,option_ids].squeeze().argmax().item()+1
     ]
-    
-TRAIN_QUESTIONS = load_questions("./TeleQnA_training.txt")
-TEST_QUESTIONS = load_questions("./TeleQnA_testing1.txt", split="test")
-TEST_QUESTIONS_NEW = load_questions("./questions_new.txt", split="test")
 
 
-def preprocess_questions():
+def add_context_to_questions():
+    if os.path.exists("data/train.json"):
+        return
     num_val = int(0.2*len(TRAIN_QUESTIONS))
     # add context to train_questions
+    progbar = tqdm(range(len(TRAIN_QUESTIONS)))
+    progbar.desc = "Train contexts"
     for v in TRAIN_QUESTIONS:
-        contexts = get_context(clean_question(v["question"]))
+        contexts = get_context([clean_question(v["question"])])
         v["contexts"] = contexts
+        progbar.update(1)
+        progbar.set_postfix({"id":v["id"]})
+    progbar.close()
+
+    progbar = tqdm(range(len(TEST_QUESTIONS)))
+    progbar.desc = "Test contexts"
     for v in TEST_QUESTIONS:
-        contexts = get_context(clean_question(v["question"]))
+        contexts = get_context([clean_question(v["question"])])
         v["contexts"] = contexts
+        progbar.update(1)
+        progbar.set_postfix({"id":v["id"]})
+    progbar.close()
+    
+    progbar = tqdm(range(len(TEST_QUESTIONS_NEW)))
+    progbar.desc = "New Test contexts"
     for v in TEST_QUESTIONS_NEW:
-        contexts = get_context(clean_question(v["question"]))
+        contexts = get_context([clean_question(v["question"])])
         v["contexts"] = contexts
+        progbar.update(1)
+        progbar.set_postfix({"id":v["id"]})
+    progbar.close()
     
     train_questions = TRAIN_QUESTIONS[:-num_val]
     val_questions = TRAIN_QUESTIONS[-num_val:]
@@ -215,6 +224,37 @@ def preprocess_questions():
         json.dump(val_questions, f)
     with open("data/test.json", "w") as f:
         json.dump(test_questions, f)
+
+def create_prompt(question, train_questions, split="train"):
+    prompt = "The following are multiple choice questions (with answers) about Telecom documents.\n\n"
+    
+
+def create_possible_train_mcqs():
+
+    question = TRAIN_QUESTIONS[index]
+    prompt = "The following are multiple choice questions (with answers) about Telecom documents.\n\n"
+    seen_idxs = [index]
+    for _ in range(1):
+        idx = index
+        while(idx in seen_idxs):
+            idx = random.choice(range(len(TRAIN_QUESTIONS)))
+        seen_idxs.append(idx)
+        p_question = TRAIN_QUESTIONS[idx]
+        prompt += f"{clean_question(p_question['question'])}\n"
+        prompt += "\n".join(p_question["options"])
+        prompt += f"\nAnswer: {p_question['answer_option']}\n\n"
+    prompt += f"{clean_question(question['question'])}\n"
+    prompt += "\n".join(question["options"])
+    prompt += "\nAnswer: "
+    return prompt
+
+
+    train_mcqs = []
+    with open("data/train.json", "w") as f:
+        train_questions = json.load(f)
+
+    for quest in train_questions:
+        
 
 
 def prepare_prompts():
@@ -353,6 +393,9 @@ def train_collate_fn(batch):
         "padding_masks":padding_masks,
     }
 
+TRAIN_QUESTIONS = load_questions("data/TeleQnA_training.txt")
+TEST_QUESTIONS = load_questions("data/TeleQnA_testing1.txt", split="test")
+TEST_QUESTIONS_NEW = load_questions("data/questions_new.txt", split="test")
 
 if __name__=="__main__":
-    print(get_train_val_dataset()[0][0])
+    add_context_to_questions()

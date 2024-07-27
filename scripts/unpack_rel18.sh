@@ -29,6 +29,7 @@ else
     sudo apt install unrar
 fi
 
+
 # extract rel18 docs
 if type "unrar" &> /dev/null
 then

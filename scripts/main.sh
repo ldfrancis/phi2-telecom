@@ -1,6 +1,22 @@
 #! /usr/bin/env bash
 
 
+# install dependencies
+if ! grep installs .states &> /dev/null
+then
+echo "Installing requirements"
+pip install -r requirements.txt
+pip install flash_attn
+pip install xformers
+pip install triton
+pip install bitsandbytes
+else
+echo installs >> .states
+echo "Done installing requirements"
+fi
+
+
+
 ./scripts/unpack_rel18.sh
 
 # if ! grep doc2txt .states &> /dev/null
@@ -16,18 +32,6 @@
 # else
 # echo "Converted docs to txt files"
 # fi
-
-# install dependencies
-if ! grep installs .states &> /dev/null
-then
-echo "Installing requirements"
-pip install -r requirements.txt
-pip install flash_attn
-else
-echo installs >> .states
-echo "Done installing requirements"
-fi
-
 
 
 if ! grep ragchunks .states &> /dev/null

@@ -24,7 +24,7 @@ CHUNKS_DIR = "data/doc/chunks/"
 CHUNKS_FILE = CHUNKS_DIR+"chunks.npy" 
 chunks = np.load(CHUNKS_FILE)
 embeds = []
-bs = 8
+bs = 64
 steps = math.ceil(len(chunks)/bs)
 progressbar = tqdm(range(steps))
 for i in range(steps):

@@ -7,16 +7,22 @@ from tqdm.auto import tqdm
 from utils.constants import EMBED_MODEL_ID, EMBEDS_FILE, CHUNKS_FILE, EMBED_MODEL_TYPE
 
 
-if EMBED_MODEL_TYPE == "HuggingFace":
-    EMBED_MODEL = AutoModel.from_pretrained(EMBED_MODEL_ID)
-    EMBED_TOKENIZER = AutoTokenizer.from_pretrained(EMBED_MODEL_ID)
-    EMBED_MODEL.to("cuda")
-else:
-    EMBED_MODEL = SentenceTransformer(EMBED_MODEL_ID, trust_remote_code=True)
-    EMBED_MODEL.max_seq_length = 8192
 
+EMBED_MODEL = None
 EMBEDS = None
 CHUNKS = None
+
+
+def get_embed_model():
+    if EMBED_MODEL_TYPE == "HuggingFace":
+        EMBED_MODEL = AutoModel.from_pretrained(EMBED_MODEL_ID)
+        EMBED_TOKENIZER = AutoTokenizer.from_pretrained(EMBED_MODEL_ID)
+        EMBED_MODEL.to("cuda")
+    else:
+        EMBED_MODEL = SentenceTransformer(EMBED_MODEL_ID, trust_remote_code=True).cuda()
+        # EMBED_MODEL.max_seq_length = 8192
+    return EMBED_MODEL
+
 
 def create_queries(questions):
     prefix = "" if EMBED_MODEL_TYPE == "SentenceTransformer" else "Represent this query for retrieving relevant documents: "
@@ -34,20 +40,26 @@ def create_keys(texts):
     ]
 
 
-def get_context(query, topk=3):
-    global EMBEDS, CHUNKS
+def get_chunks(query, topk=2):
+    global EMBEDS, CHUNKS, EMBED_MODEL
+    if EMBED_MODEL is None:
+        EMBED_MODEL = get_embed_model()
+
     if EMBEDS is None or CHUNKS is None:
         EMBEDS = np.load(EMBEDS_FILE)
         CHUNKS = np.load(CHUNKS_FILE)
 
     query = create_queries(query)
     if EMBED_MODEL_TYPE == "SentenceTransformer":
-        q = torch.tensor(EMBED_MODEL.encode(query, prompt_name="query")).float().to(EMBED_MODEL.device)
+        prompt_name = "s2p_query" if "stella" in EMBED_MODEL_ID else "query"
+        q = torch.tensor(EMBED_MODEL.encode(query, prompt_name=prompt_name)).float().to(EMBED_MODEL.device)
     else:
         q = EMBED_TOKENIZER(query, padding=True, truncation=True, return_tensors='pt')
         q.to(EMBED_MODEL.device)
         q = EMBED_MODEL(**q).last_hidden_state[:, 0]
         q = torch.nn.functional.normalize(q, p=2, dim=1)
+
+    
 
     bs = 256
     scores = []
@@ -57,20 +69,24 @@ def get_context(query, topk=3):
         end = (i+1)*bs
         k = torch.tensor(EMBEDS[start:end]).float().to(EMBED_MODEL.device)
         with torch.no_grad():
-            score = q @ k.T
+            if "stella" in EMBED_MODEL_ID:
+                score = EMBED_MODEL.similarity(q, k)
+                # score = q @ k.T
+            else:
+                score = q @ k.T
             scores.append(score.cpu().numpy())
 
+    
     scores = np.concatenate(scores, axis=1)
     args = np.argsort(scores, axis=1)[:,::-1][:,:topk]
 
-    contexts = []
+    chunks = []
     for i in range(len(query)):
         for j in range(topk):
-            contexts += [CHUNKS[args[i,j]]]
+            chunks += [CHUNKS[args[i,j]]]
             # context += "\n"
         # context += "\n"
-
-    return contexts
+    return chunks
 
 
 

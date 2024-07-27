@@ -1,8 +1,8 @@
 
 
 PHI2_MODEL_ID = "microsoft/phi-2"
-EMBED_MODEL_ID = "BAAI/llm-embedder"#"Alibaba-NLP/gte-Qwen2-1.5B-instruct"
-EMBED_MODEL_TYPE = "HuggingFace"#"SentenceTransformer"
+EMBED_MODEL_ID = "infgrad/stella_en_400M_v5"#"Alibaba-NLP/gte-Qwen2-1.5B-instruct"#"BAAI/llm-embedder"
+EMBED_MODEL_TYPE = "SentenceTransformer"#"HuggingFace" "SentenceTransformer"
 
 DATA_DIR = "data/"
 SAMPLE_SUB_FILE = DATA_DIR + "SampleSubmission.csv"
